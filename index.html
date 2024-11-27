@@ -9,6 +9,7 @@
       font-family: Arial, sans-serif;
       padding: 20px;
       background-color: #f4f4f9;
+      margin: 0;
     }
     .hidden {
       display: none;
@@ -16,9 +17,11 @@
     input, button {
       padding: 10px;
       margin: 5px;
-      width: 300px;
+      width: 100%;  /* Ensure inputs take up full width */
+      max-width: 300px; /* Limit the width to prevent overflow */
       border-radius: 5px;
       border: 1px solid #ccc;
+      box-sizing: border-box;  /* Make sure padding and border don't affect the width */
     }
     button {
       background-color: #4CAF50;
@@ -39,13 +42,34 @@
     }
     .form-container {
       background-color: white;
-      padding: 20px;
+      padding: 15px; /* Reduced padding for tighter layout */
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       margin-bottom: 20px;
+      max-width: 100%; /* Ensure form doesn't overflow */
+      box-sizing: border-box;
+      margin-left: auto;
+      margin-right: auto; /* Center the form */
     }
     .center {
       text-align: center;
+    }
+    .logo-container {
+      text-align: center;
+      margin-bottom: 10px; /* Reduced space between logo and content */
+    }
+    .logo-container img {
+      max-width: 50%; /* Reduced logo size for neatness */
+      height: auto;
+    }
+    @media (max-width: 768px) {
+      input, button {
+        max-width: 100%; /* Make buttons and inputs take full width on smaller screens */
+      }
+
+      .form-container {
+        padding: 10px; /* Reduced padding for smaller screens */
+      }
     }
   </style>
 </head>
@@ -53,6 +77,9 @@
 
   <!-- Password Page -->
   <div id="passwordSection" class="form-container center">
+    <div class="logo-container">
+      <img src="https://raw.githubusercontent.com/ttucric/ttucric/6b7f8f7dd66d00df280cd0a1c51561dc4d38199e/CLUB%20LOGO.png" alt="Club Logo">
+    </div>
     <h2>Enter Password to Access Member System</h2>
     <input type="password" id="passwordField" placeholder="Enter password">
     <button id="passwordButton">Submit</button>
@@ -60,6 +87,9 @@
 
   <!-- Main Content (Only visible after login) -->
   <div id="mainContent" class="hidden">
+    <div class="logo-container">
+      <img src="https://raw.githubusercontent.com/ttucric/ttucric/6b7f8f7dd66d00df280cd0a1c51561dc4d38199e/CLUB%20LOGO.png" alt="Club Logo">
+    </div>
     <h2>TTUCRIC MEMBERS DATABASE</h2> <!-- Updated Heading -->
 
     <!-- Registration Form -->
