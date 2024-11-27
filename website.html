@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TTUCRIC MEMBERS DATABASE</title> <!-- Updated Title -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f9;
+    }
+    .hidden {
+      display: none;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      width: 300px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    h2, h3 {
+      color: #333;
+    }
+    .error-message {
+      color: red;
+    }
+    .success-message {
+      color: green;
+    }
+    .form-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .center {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password Page -->
+  <div id="passwordSection" class="form-container center">
+    <h2>Enter Password to Access Member System</h2>
+    <input type="password" id="passwordField" placeholder="Enter password">
+    <button id="passwordButton">Submit</button>
+  </div>
+
+  <!-- Main Content (Only visible after login) -->
+  <div id="mainContent" class="hidden">
+    <h2>TTUCRIC MEMBERS DATABASE</h2> <!-- Updated Heading -->
+
+    <!-- Registration Form -->
+    <div class="form-container">
+      <h3>Register New Member</h3>
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="text" id="course" placeholder="Course" required>
+      <input type="text" id="period" placeholder="Period" required>
+      <input type="text" id="position" placeholder="Position (e.g. President)" required>
+      <input type="text" id="email" placeholder="Email" required>
+      <input type="text" id="phone" placeholder="Phone Number" required>
+      <button id="registerButton">Register</button>
+      <p id="membershipNumber"></p> <!-- Display Membership Number after registration -->
+    </div>
+
+    <hr>
+
+    <!-- Search Member -->
+    <div class="form-container">
+      <h3>Search Member by Registration Number</h3>
+      <input type="text" id="searchRegNo" placeholder="Enter Registration Number">
+      <button id="searchButton">Search</button>
+      <div id="memberDetails"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Importing Firebase Modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, getDoc, setDoc, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.1.2/firebase-firestore.js";
+
+    // Firebase configuration (Firestore)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvUyCcsEeXvTVyD18wjogo_sVeynKpWxI",
+      authDomain: "ttucric.firebaseapp.com",
+      projectId: "ttucric",
+      storageBucket: "ttucric.appspot.com",
+      messagingSenderId: "235417144935",
+      appId: "1:235417144935:web:4cc6d87bff161028d78ec2",
+      measurementId: "G-F60B5D8QZN"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Firestore references
+    const membersRef = collection(db, 'members');
+    const counterRef = doc(db, 'counters', 'membershipCounter');
+
+    let loggedIn = false;
+
+    // Password validation function
+    function checkPassword() {
+      const password = document.getElementById("passwordField").value;
+      if (password === "001") { // Replace with your actual password
+        loggedIn = true;
+        document.getElementById("passwordSection").style.display = "none";
+        document.getElementById("mainContent").style.display = "block";
+      } else {
+        alert("Incorrect password!");
+      }
+    }
+
+    // Add event listener for password button
+    document.getElementById("passwordButton").addEventListener("click", checkPassword);
+
+    // Register a new member and generate unique membership number
+    async function registerMember() {
+      const name = document.getElementById("name").value;
+      const course = document.getElementById("course").value;
+      const period = document.getElementById("period").value;
+      const position = document.getElementById("position").value;
+      const email = document.getElementById("email").value;
+      const phone = document.getElementById("phone").value;
+
+      if (!name || !course || !period || !position || !email || !phone) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      // Get current last membership number from the counter
+      const counterDoc = await getDoc(counterRef);
+      const lastMembershipNumber = counterDoc.data().lastMembershipNumber;
+
+      const currentNumber = parseInt(lastMembershipNumber.split(" ")[1]);
+      const newNumber = currentNumber + 1;
+      const newMembershipNumber = `TTUCRIC ${String(newNumber).padStart(2, '0')}`;
+
+      // Create a new document with the membership number as the document ID
+      const memberRef = doc(db, 'members', newMembershipNumber); // Use membership number as doc ID
+      await setDoc(memberRef, {
+        name: name,
+        course: course,
+        period: period,
+        position: position,
+        email: email,
+        phone: phone,
+        registrationNumber: newMembershipNumber
+      });
+
+      // Update the counter document
+      await updateDoc(counterRef, {
+        lastMembershipNumber: newMembershipNumber
+      });
+
+      // Display the membership number after registration
+      document.getElementById("membershipNumber").innerText = `Member successfully registered! Their membership number is: ${newMembershipNumber}`;
+    }
+
+    // Add event listener for register button
+    document.getElementById("registerButton").addEventListener("click", registerMember);
+
+    // Search for a member by registration number
+    async function searchMember() {
+      const searchRegNo = document.getElementById("searchRegNo").value;
+      if (!searchRegNo) {
+        alert("Please enter a registration number.");
+        return;
+      }
+
+      // Query Firestore to find the member by registration number (document ID)
+      const memberDoc = await getDoc(doc(db, 'members', searchRegNo));
+
+      const memberDetailsDiv = document.getElementById("memberDetails");
+      memberDetailsDiv.innerHTML = ''; // Clear previous search result
+
+      if (!memberDoc.exists()) {
+        memberDetailsDiv.innerHTML = `<p class="error-message">No member found with registration number: ${searchRegNo}</p>`;
+      } else {
+        const member = memberDoc.data();
+        memberDetailsDiv.innerHTML = `
+          <p><strong>Name:</strong> ${member.name}</p>
+          <p><strong>Course:</strong> ${member.course}</p>
+          <p><strong>Period:</strong> ${member.period}</p>
+          <p><strong>Position:</strong> ${member.position}</p>
+          <p><strong>Email:</strong> ${member.email}</p>
+          <p><strong>Phone:</strong> ${member.phone}</p>
+          <p><strong>Registration Number:</strong> ${member.registrationNumber}</p>
+        `;
+      }
+    }
+
+    // Add event listener for search button
+    document.getElementById("searchButton").addEventListener("click", searchMember);
+
+  </script>
+
+</body>
+</html>
