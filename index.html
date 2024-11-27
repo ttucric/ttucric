@@ -156,21 +156,23 @@
     document.getElementById("passwordButton").addEventListener("click", checkPassword);
 
     // Check for duplicate email
-    async function checkDuplicateEmail(email) {
+    async function checkDuplicateMember(email) {
       const q = query(membersRef, where("email", "==", email));
       const querySnapshot = await getDocs(q);
+
       if (!querySnapshot.empty) {
         return true; // Duplicate email found
       }
       return false; // No duplicate found
     }
 
-    // Check for duplicate TTU Registration Number
-    async function checkDuplicateTTUReg(ttuRegNo) {
-      const q = query(membersRef, where("ttuRegNo", "==", ttuRegNo));
+    // Check for duplicate name and phone number
+    async function checkDuplicateNamePhone(name, phone) {
+      const q = query(membersRef, where("name", "==", name), where("phone", "==", phone));
       const querySnapshot = await getDocs(q);
+
       if (!querySnapshot.empty) {
-        return true; // Duplicate TTU Registration Number found
+        return true; // Duplicate name or phone found
       }
       return false; // No duplicate found
     }
@@ -181,7 +183,7 @@
       const course = document.getElementById("course").value;
       const period = document.getElementById("period").value;
       const position = document.getElementById("position").value;
-      const ttuRegNo = document.getElementById("ttuRegNo").value;
+      const ttuRegNo = document.getElementById("ttuRegNo").value;  // Added TTU Registration Number
       const email = document.getElementById("email").value;
       const phone = document.getElementById("phone").value;
 
@@ -191,40 +193,46 @@
       }
 
       // Check for duplicate email
-      const isEmailDuplicate = await checkDuplicateEmail(email);
+      const isEmailDuplicate = await checkDuplicateMember(email);
       if (isEmailDuplicate) {
         alert("A member with this email already exists.");
         return;
       }
 
-      // Check for duplicate TTU Registration Number
-      const isTTURegDuplicate = await checkDuplicateTTUReg(ttuRegNo);
-      if (isTTURegDuplicate) {
-        alert("A member with this TTU Registration Number already exists.");
+      // Check for duplicate name or phone number
+      const isNamePhoneDuplicate = await checkDuplicateNamePhone(name, phone);
+      if (isNamePhoneDuplicate) {
+        alert("A member with this name and phone number already exists.");
         return;
       }
 
-      // Get the latest membership number
+      // Get current membership counter
       const counterDoc = await getDoc(counterRef);
-      const lastMembershipNumber = counterDoc.exists() ? counterDoc.data().lastMembershipNumber : 0;
-      const newMembershipNumber = lastMembershipNumber + 1;
+      const lastMembershipNumber = counterDoc.data().lastMembershipNumber;
 
-      // Add new member to Firestore
-      await setDoc(doc(db, "members", ttuRegNo), {
+      const currentNumber = parseInt(lastMembershipNumber.split(" ")[1]);
+      const newNumber = currentNumber + 1;
+      const newMembershipNumber = `TTUCRIC ${String(newNumber).padStart(2, '0')}`;
+
+      // Create a new member document
+      const memberRef = doc(db, 'members', newMembershipNumber);
+      await setDoc(memberRef, {
         name: name,
         course: course,
         period: period,
         position: position,
+        ttuRegNo: ttuRegNo,  // Store TTU Registration Number
         email: email,
         phone: phone,
-        ttuRegNo: ttuRegNo,
         registrationNumber: newMembershipNumber
       });
 
       // Update membership counter
-      await updateDoc(counterRef, { lastMembershipNumber: newMembershipNumber });
+      await updateDoc(counterRef, {
+        lastMembershipNumber: newMembershipNumber
+      });
 
-      // Display success message
+      // Display membership number
       document.getElementById("membershipNumber").innerHTML = `Member successfully registered with Membership Number: ${newMembershipNumber}`;
     }
 
@@ -264,6 +272,8 @@
 
     // Event listener for search button
     document.getElementById("searchButton").addEventListener("click", searchMember);
+
   </script>
+
 </body>
 </html>
